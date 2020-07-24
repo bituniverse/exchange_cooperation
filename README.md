@@ -15,14 +15,14 @@ In BitUniverse, we integrate Exchanges with CCXT.
 
 CCXT is a full-featured library for cryptocurrency trading.
 However, for building a trading bot, we only need part of its features, while some other useful APIs or parameters are not unified by CCXT.
-So we made our own definition of Exchange APIs for our trading bots usage.
+So we made our own definition of Exchange APIs for the trading bot usage.
 
 All the API definitions are based on CCXT's definitions. So it's easy to reuse CCXT as the implementation.
 
 However, CCXT is not necessary for the implementation. 
 We only made the definition. People could implement the APIs with any libraries they want and just satisfy the definition.
 
-If the Exchange has been supported by CCXT, the CCXT' implementation could be used as the BU's implementation directly.
+If the Exchange has been supported by CCXT, the CCXT's implementation could be used as the BU's implementation directly.
 If the Exchange is not supported by CCXT, we highly recommend to implement the APIs with CCXT. 
 
 CCXT supports JavaScript, Python and PHP, while in BitUniverse, we only need the Python implementation. 
