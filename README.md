@@ -64,7 +64,7 @@ So if the future trading needs to be supported, the CCXT's implementation cannot
    Just replace `json.loads(some_json_string)` with `simplejson.loads(some_json_string, use_decimal=True)`
    Or you can also inherit ccxt_ext to solve this. Besides, transfer numbers as string is also supported.
    
-   See [example](blob/master/examples/binance_swap.py) for more details
+   See [example](examples/binance_swap.py) for more details
 
 4. Since BitUniverse has extremely strict safety structure. We will hook the signature generation codes to our safety system. 
    We will not pass users' APIKey and APISecret into the API object as CCXT dose. 
