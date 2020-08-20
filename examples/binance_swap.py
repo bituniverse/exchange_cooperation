@@ -19,7 +19,7 @@ from ccxt_ext.errors import ChangeMarginTypeError, ChangePositionError
 from swap_api import SwapApi
 
 
-class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
+class BinanceSwap(CCXTExtension, ccxt.async_support.binance):
 
     # ------------------------------------------------------------------------------------------------------------------
 
