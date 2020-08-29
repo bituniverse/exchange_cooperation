@@ -350,7 +350,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         for i in range(0, len(markets)):
             market = markets[i]
             id = market['symbol']
-            baseId = market['baseAsset']
+            baseId = market['baseAsset'] + ".SWAP"
             quoteId = market['quoteAsset']
             base = self.common_currency_code(baseId)
             quote = self.common_currency_code(quoteId)
@@ -449,55 +449,80 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         # futures(fapi)
         #
         #     {
-        #         "feeTier":0,
-        #         "canTrade":true,
-        #         "canDeposit":true,
-        #         "canWithdraw":true,
-        #         "updateTime":0,
-        #         "totalInitialMargin":"0.00000000",
-        #         "totalMaintMargin":"0.00000000",
-        #         "totalWalletBalance":"4.54000000",
-        #         "totalUnrealizedProfit":"0.00000000",
-        #         "totalMarginBalance":"4.54000000",
-        #         "totalPositionInitialMargin":"0.00000000",
-        #         "totalOpenOrderInitialMargin":"0.00000000",
-        #         "maxWithdrawAmount":"4.54000000",
-        #         "assets":[
-        #             {
-        #                 "asset":"USDT",
-        #                 "walletBalance":"4.54000000",
-        #                 "unrealizedProfit":"0.00000000",
-        #                 "marginBalance":"4.54000000",
-        #                 "maintMargin":"0.00000000",
-        #                 "initialMargin":"0.00000000",
-        #                 "positionInitialMargin":"0.00000000",
-        #                 "openOrderInitialMargin":"0.00000000",
-        #                 "maxWithdrawAmount":"4.54000000"
-        #             }
-        #         ],
-        #         "positions":[
-        #             {
-        #                 "symbol":"BTCUSDT",
-        #                 "initialMargin":"0.00000",
-        #                 "maintMargin":"0.00000",
-        #                 "unrealizedProfit":"0.00000000",
-        #                 "positionInitialMargin":"0.00000",
-        #                 "openOrderInitialMargin":"0.00000"
-        #             }
-        #         ]
-        #     }
+        #     "feeTier": 0,  // 手续费等级
+        #     "canTrade": true,  // 是否可以交易
+        #     "canDeposit": true,  // 是否可以入金
+        #     "canWithdraw": true, // 是否可以出金
+        #     "updateTime": 0,
+        #     "totalInitialMargin": "0.00000000",  // 但前所需起始保证金总额(存在逐仓请忽略)
+        #     "totalMaintMargin": "0.00000000",  // 维持保证金总额
+        #     "totalWalletBalance": "23.72469206",   // 账户总余额
+        #     "totalUnrealizedProfit": "0.00000000",  // 持仓未实现盈亏总额
+        #     "totalMarginBalance": "23.72469206",  // 保证金总余额
+        #     "totalPositionInitialMargin": "0.00000000",  // 持仓所需起始保证金(基于最新标记价格)
+        #     "totalOpenOrderInitialMargin": "0.00000000",  // 当前挂单所需起始保证金(基于最新标记价格)
+        #     "totalCrossWalletBalance": "23.72469206",  // 全仓账户余额
+        #     "totalCrossUnPnl": "0.00000000",    // 全仓持仓未实现盈亏总额
+        #     "availableBalance": "23.72469206",       // 可用余额
+        #     "maxWithdrawAmount": "23.72469206"     // 最大可转出余额
+        #     "assets": [
+        #         {
+        #             "asset": "USDT",        //资产
+        #             "walletBalance": "23.72469206",  //余额
+        #             "unrealizedProfit": "0.00000000",  // 未实现盈亏
+        #             "marginBalance": "23.72469206",  // 保证金余额
+        #             "maintMargin": "0.00000000",    // 维持保证金
+        #             "initialMargin": "0.00000000",  // 当前所需起始保证金
+        #             "positionInitialMargin": "0.00000000",  // 持仓所需起始保证金(基于最新标记价格)
+        #             "openOrderInitialMargin": "0.00000000", // 当前挂单所需起始保证金(基于最新标记价格)
+        #             "crossWalletBalance": "23.72469206",  //全仓账户余额
+        #             "crossUnPnl": "0.00000000" // 全仓持仓未实现盈亏
+        #             "availableBalance": "23.72469206",       // 可用余额
+        #             "maxWithdrawAmount": "23.72469206"     // 最大可转出余额
+        #         }
+        #     ],
+        #     "positions": [  // 头寸，将返回所有市场symbol。
+        #         //根据用户持仓模式展示持仓方向，即双向模式下只返回BOTH持仓情况，单向模式下只返回 LONG 和 SHORT 持仓情况
+        #         {
+        #             "symbol": "BTCUSDT",  // 交易对
+        #             "initialMargin": "0",   // 当前所需起始保证金(基于最新标记价格)
+        #             "maintMargin": "0", //维持保证金
+        #             "unrealizedProfit": "0.00000000",  // 持仓未实现盈亏
+        #             "positionInitialMargin": "0",  // 持仓所需起始保证金(基于最新标记价格)
+        #             "openOrderInitialMargin": "0",  // 当前挂单所需起始保证金(基于最新标记价格)
+        #             "leverage": "100",  // 杠杆倍率
+        #             "isolated": true,  // 是否是逐仓模式
+        #             "entryPrice": "0.00000",  // 持仓成本价
+        #             "maxNotional": "250000",  // 当前杠杆下用户可用的最大名义价值
+        #             "positionSide": "BOTH"  // 持仓方向。
+        #         }
+        #     ]
+        # }
         #
-        result = {'info': response}
+
+        result = {'info': response, 'currencies': {}}
         balances = self.safe_value(response, 'assets', [])
         for balance in balances:
             currencyId = self.safe_string(balance, 'asset')
             code = self.safe_currency_code(currencyId)
             account = self.account()
-            account['free'] = self.safe_decimal(balance, 'maxWithdrawAmount')
+            account['free'] = self.safe_decimal(balance, 'availableBalance')
             account['total'] = self.safe_decimal(balance, 'walletBalance')
             account['used'] = account['total'] - account['free']
-            result[code] = account
-        return self.parse_balance(result)
+            result['currencies'][code] = account
+        result['totalInitialMargin'] = self.safe_decimal(response, 'totalInitialMargin')
+        result['totalMaintMargin'] = self.safe_decimal(response, 'totalMaintMargin')
+        result['totalWalletBalance'] = self.safe_decimal(response, 'totalWalletBalance')
+        result['totalUnrealizedProfit'] = self.safe_decimal(response, 'totalUnrealizedProfit')
+        result['totalMarginBalance'] = self.safe_decimal(response, 'totalMarginBalance')
+        result['totalPositionInitialMargin'] = self.safe_decimal(response, 'totalPositionInitialMargin')
+        result['totalOpenOrderInitialMargin'] = self.safe_decimal(response, 'totalOpenOrderInitialMargin')
+        result['totalCrossWalletBalance'] = self.safe_decimal(response, 'totalCrossWalletBalance')
+        result['totalCrossUnPnl'] = self.safe_decimal(response, 'totalCrossUnPnl')
+        result['availableBalance'] = self.safe_decimal(response, 'availableBalance')
+        result['maxWithdrawAmount'] = self.safe_decimal(response, 'maxWithdrawAmount')
+
+        return result
 
     async def fetch_order_book(self, symbol, limit=None, params=None):
         await self.load_markets()
@@ -513,7 +538,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         orderbook['nonce'] = self.safe_integer(response, 'lastUpdateId')
         return orderbook
 
-    async def create_order(self, symbol, type, side, amount, price, client_order_id, reduce_only, params=None):
+    async def create_order(self, symbol, type, side, amount, price, clientOrderId, positionSide, reduceOnly, params=None):
         await self.load_markets()
         market = self.market(symbol)
 
@@ -526,7 +551,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'type': uppercaseType,
             'side': side.upper(),
         }
-        new_client_order_id = client_order_id
+        new_client_order_id = clientOrderId
         request['newClientOrderId'] = new_client_order_id
         if uppercaseType == 'MARKET':
             quoteOrderQty = self.safe_decimal(params, 'quoteOrderQty')
@@ -572,10 +597,16 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
                 params = self.omit(params, 'stopPrice')
                 request['stopPrice'] = stopPrice
 
+        if positionSide:
+            request['positionSide'] = positionSide.upper()
+
+        if reduceOnly is not None:
+            request['reduceOnly'] = reduceOnly
+
         response = await self.fapiPrivatePostOrder(self.extend(request, params))
         return self.parse_swap_order(response, market)
 
-    async def cancel_order(self, id, symbol, client_order_id=None, params=None):
+    async def cancel_order(self, id, symbol, clientOrderId=None, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' cancelOrder requires a symbol argument')
 
@@ -588,7 +619,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             # 'origClientOrderId': id,
         }
 
-        origClientOrderId = client_order_id
+        origClientOrderId = clientOrderId
         if origClientOrderId is not None:
             request['origClientOrderId'] = origClientOrderId
         else:
@@ -599,25 +630,28 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': response
         }
 
-    async def fetch_open_orders(self, symbol, since=None, limit=None, from_id=None, params=None):
+    async def fetch_open_orders(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
         await self.load_markets()
         market = self.market(symbol)
+
+        if direct is not None and direct != 'next':
+            raise ArgumentsRequired('in binance "direct" can only be next')
 
         request = {}
         if symbol is not None:
             request['symbol'] = market['id']
 
-        if from_id is not None:
-            request['orderId'] = from_id
+        if fromId is not None:
+            request['orderId'] = fromId
         response = await self.fapiPrivateGetOpenOrders(self.extend(request, params))
 
         return self.parse_orders(response, market, since, limit)
 
-    async def fetch_closed_orders(self, symbol, since=None, limit=None, from_id=None, params=None):
-        orders = await self.fetch_orders(symbol, since, limit, from_id, params)
+    async def fetch_closed_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
+        orders = await self.fetch_orders(symbol, since, limit, fromId, direct, params)
         return self.filter_by_array(orders, 'status', values={'closed', 'canceled', 'canceling'}, indexed=False)
 
-    async def fetch_order(self, id, symbol, client_order_id=None, params=None):
+    async def fetch_order(self, id, symbol, clientOrderId=None, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' fetchOrder requires a symbol argument')
 
@@ -627,7 +661,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         request = {
             'symbol': market['id'],
         }
-        origClientOrderId = client_order_id
+        origClientOrderId = clientOrderId
         if origClientOrderId is not None:
             request['origClientOrderId'] = origClientOrderId
         else:
@@ -636,9 +670,12 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
 
         return self.parse_swap_order(response, market)
 
-    async def fetch_orders(self, symbol, since=None, limit=None, from_id=None, params=None):
+    async def fetch_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' fetchOrders requires a symbol argument')
+
+        if direct is not None and direct != 'next':
+            raise ArgumentsRequired('in binance "direct" can only be next')
 
         await self.load_markets()
         market = self.market(symbol)
@@ -652,15 +689,18 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             # 默认值 500; 最大值 1000
             request['limit'] = min(int(limit), 1000)
 
-        if from_id is not None:
-            request['orderId'] = from_id
+        if fromId is not None:
+            request['orderId'] = fromId
         response = await self.fapiPrivateGetAllOrders(self.extend(request, params))
 
         return self.parse_swap_orders(response, market, since, limit)
 
-    async def fetch_my_trades(self, symbol, since=None, limit=None, from_id=None, params=None):
+    async def fetch_my_trades(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' fetchMyTrades requires a symbol argument')
+
+        if direct is not None and direct != 'next':
+            raise ArgumentsRequired('in binance "direct" can only be next')
 
         await self.load_markets()
         market = self.market(symbol)
@@ -672,16 +712,16 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             request['startTime'] = since
         if limit is not None:
             request['limit'] = limit
-        if from_id is not None:
+        if fromId is not None:
             try:
-                params['fromId'] = int(from_id)
+                params['fromId'] = int(fromId)
             except (TypeError, ValueError):
-                raise BadRequest(self.id + f' fetchMyTrades invalid fromId: {from_id}')
+                raise BadRequest(self.id + f' fetchMyTrades invalid fromId: {fromId}')
 
         response = await self.fapiPrivateGetUserTrades(self.extend(request, params))
         return self.parse_swap_trades(response, market)
 
-    async def change_leverage(self, symbol, position_side, leverage, params=None):
+    async def change_leverage(self, symbol, leverage, positionSide=None, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' swapLeverage requires a symbol argument')
 
@@ -704,11 +744,11 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': response,
         }
 
-    async def change_margin_type(self, symbol, position_side, margin_type, params=None):
+    async def change_margin_type(self, symbol, marginType, positionSide=None, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' swapMarginType requires a symbol argument')
 
-        margin_type = margin_type.upper()
+        margin_type = marginType.upper()
         if margin_type not in {'ISOLATED', 'CROSSED'}:
             raise BadRequest(f'swapMarginType invalid type: {margin_type}')
 
@@ -725,7 +765,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': response,
         }
 
-    async def change_isolated_margin(self, symbol, position_side, direction, amount, params=None):
+    async def change_isolated_margin(self, symbol, positionSide, direction, amount, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' swapPositionMargin requires a symbol argument')
 
@@ -742,8 +782,8 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'type': 1 if 'ASC' == direction.upper() else 2,
         }
 
-        if position_side:
-            request['positionSide'] = position_side.upper()
+        if positionSide:
+            request['positionSide'] = positionSide.upper()
 
         response = await self.fapiPrivatePostPositionMargin(self.extend(request, params))
 
@@ -751,9 +791,9 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': response
         }
 
-    async def change_position_side(self, symbol, position_side, params=None):
+    async def change_position_side(self, symbol, positionSide, params=None):
 
-        request = {'dualSidePosition': 'true' if position_side == 'dual' else 'false'}
+        request = {'dualSidePosition': 'true' if positionSide == 'dual' else 'false'}
         response = await self.fapiPrivatePostPositionSideDual(self.extend(request, params))
 
         return {
@@ -771,15 +811,15 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': response
         }]
 
-    async def fetch_position_side(self, symbol, params=None):
+    async def fetch_position_side(self, symbol=None, params=None):
         response = await self.fapiPrivateGetPositionSideDual(params)
 
         return {
             'info': response,
-            'position_side': 'dual' if response.get('dualSidePosition') else 'single'
+            'positionSide': 'dual' if response.get('dualSidePosition') else 'single'
         }
 
-    async def fetch_funding_records(self, symbol=None, since=None, limit=None, from_id=None, params=None):
+    async def fetch_funding_records(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
         request = {}
 
         if symbol is not None:
@@ -796,7 +836,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         response = await self.fapiPrivateGetIncome(self.extend(request, params))
         return self.parse_funding_fees(response)
 
-    async def fetch_positions(self, symbol, params=None):
+    async def fetch_positions(self, symbol=None, params=None):
         await self.load_markets()
 
         response = await self.fapiPrivatev2GetPositionRisk(params)
@@ -814,14 +854,35 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         }
         return self.safe_string(statuses, status, status)
 
+    async def fetch_incomes(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        request = {}
+        await self.load_markets()
+
+        if symbol is not None:
+            market = self.market(symbol)
+
+            request['symbol'] = market['id']
+        if 'incomeType' in params:
+            income_type = params.pop('incomeType').upper()
+            if income_type not in {'TRANSFER', 'WELCOME_BONUS', 'REALIZED_PNL',
+                                   'FUNDING_FEE', 'COMMISSION', 'INSURANCE_CLEAR'}:
+                raise BadRequest(f'fetchSwapIncome invalid incomeType: {income_type}')
+            request['incomeType'] = income_type
+        if since is not None:
+            request['startTime'] = since
+        if limit is not None:
+            request['limit'] = limit
+        response = await self.fapiPrivateGetIncome(self.extend(request, params))
+        return self.parse_swap_incomes(response)
+
     def parse_funding_fee(self, result):
 
         return {
             'id': None,
-            'funding_fee': self.safe_decimal(result, 'income'),
+            'fundingFee': self.safe_decimal(result, 'income'),
             'position': None,
-            'position_value': None,
-            'funding_rate': None,
+            'positionValue': None,
+            'fundingRate': None,
             'timestamp': self.safe_integer(result, 'time'),
             'info': {}
         }
@@ -1050,6 +1111,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
 
     def parse_swap_position(self, position):
         symbol = None
+        market = None
         marketId = self.safe_string(position, 'symbol')
         if marketId in self.markets_by_id:
             market = self.markets_by_id[marketId]
@@ -1060,16 +1122,42 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'info': position,
             'symbol': symbol,
             'position': self.safe_string(position, 'positionAmt'),
-            'open_price': self.safe_string(position, 'entryPrice'),
-            'mark_price': self.safe_string(position, 'markPrice'),
-            'unrealized_profit': self.safe_string(position, 'unRealizedProfit'),
-            'liquidate_price': self.safe_string(position, 'liquidationPrice'),
+            'openPrice': self.safe_string(position, 'entryPrice'),
+            'markPrice': self.safe_string(position, 'markPrice'),
+            'unrealizedProfit': self.safe_string(position, 'unRealizedProfit'),
+            'liquidatePrice': self.safe_string(position, 'liquidationPrice'),
             'leverage': self.safe_integer(position, 'leverage'),
-            'margin_type': self.safe_string(position, 'marginType'),
-            'init_margin': self.truncate_to_string(
+            'marginType': self.safe_string(position, 'marginType'),
+            'initMargin': self.truncate_to_string(
                 self.safe_decimal(position, 'isolatedMargin') - self.safe_decimal(position, 'unRealizedProfit'), 8),
-            'position_side': self.safe_string(position, 'positionSide'),
+            'positionSide': self.safe_string(position, 'positionSide'),
         }
+
+    def parse_swap_income(self, income):
+        symbol = None
+        market = None
+        marketId = self.safe_string(income, 'symbol')
+        if marketId in self.markets_by_id:
+            market = self.markets_by_id[marketId]
+        if market is not None:
+            symbol = market['symbol']
+
+        return {
+            "symbol": symbol,
+            "incomeType": income['incomeType'],
+            "income": income['income'],
+            "asset": income['asset'],
+            'timestamp': income['time'],
+            "tranId": income['tranId'],
+            "tradeId": income['tradeId'],
+            "info": income
+        }
+
+    def parse_swap_incomes(self, incomes, params=None):
+        array = self.to_array(incomes)
+        array = [self.extend(self.parse_swap_income(income), params) for income in array]
+        array = self.sort_by(array, 'timestamp')
+        return array
 
     def handle_rest_errors(self, exception, http_status_code, response, url, method='GET'):
         if response:
