@@ -11,8 +11,8 @@ class TestSpotAPIs(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.api = BinanceSpot({
             # note: DO NOT commit this
-            'apiKey': '3D4QfG4TehJvWFy3LOX4CT4ZyHfUrY7TqvMpmB6rhpBqTyEsJoFTdbvpASb8UgqP',
-            'secret': 'YKxEdRTfbSy6k7BLUUR0GUPqLpXvN8j6sC2jiXNz7LoaCd9VETFDJvpHZ9mSF1Lc',
+            'apiKey': 'your-api-key',
+            'secret': 'your-api-secret',
             # 'verbose': True,
         })
         self.current_time_string = f'{int(time.time())}'
