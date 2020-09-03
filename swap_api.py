@@ -72,7 +72,8 @@ class SwapApi:
         """
         raise NotImplementedError()
 
-    async def create_order(self, symbol, type, side, amount, price, clientOrderId, positionSide, reduceOnly, params=None):
+    async def create_order(self, symbol, type, side, amount=None, price=None, clientOrderId=None, positionSide=None,
+                           reduceOnly=False, params=None):
         """
         Place a new order
 
@@ -106,6 +107,9 @@ class SwapApi:
                 'filled':      1.1,           // filled amount of base currency
                 'remaining':   0.4,           // remaining amount to fill
                 'cost':        0.076094524,   // 'average' * 'price' (filling price used where available)
+                'positionSide':'long',        // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+                'realizedPnl': 0.076094524,   // realized profit
+
                 'trades':    [ ... ],         // a list of order trades/executions
                 'fee': {                      // fee info, if available
                     'currency': 'BTC',        // which currency the fee is (usually quote)
@@ -113,7 +117,7 @@ class SwapApi:
                     'rate': 0.002,            // the fee rate (if available)
                 },
                 'info': { ... },              // the original unparsed order structure as is
-            }
+        }
         """
         raise NotImplementedError()
 
@@ -145,6 +149,9 @@ class SwapApi:
             'filled':      1.1,           // filled amount of base currency
             'remaining':   0.4,           // remaining amount to fill
             'cost':        0.076094524,   // 'average' * 'price' (filling price used where available)
+            'positionSide':'long',        // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+            'realizedPnl': 0.076094524,   // realized profit
+
             'trades':    [ ... ],         // a list of order trades/executions
             'fee': {                      // fee info, if available
                 'currency': 'BTC',        // which currency the fee is (usually quote)
@@ -204,6 +211,9 @@ class SwapApi:
                 'filled':      1.1,           // filled amount of base currency
                 'remaining':   0.4,           // remaining amount to fill
                 'cost':        0.076094524,   // 'average' * 'price' (filling price used where available)
+                'positionSide':'long',        // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+                'realizedPnl': 0.076094524,   // realized profit
+
                 'trades':    [ ... ],         // a list of order trades/executions
                 'fee': {                      // fee info, if available
                     'currency': 'BTC',        // which currency the fee is (usually quote)
@@ -249,6 +259,9 @@ class SwapApi:
                 'filled':      1.1,           // filled amount of base currency
                 'remaining':   0.4,           // remaining amount to fill
                 'cost':        0.076094524,   // 'average' * 'price' (filling price used where available)
+                'positionSide':'long',        // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+                'realizedPnl': 0.076094524,   // realized profit
+
                 'trades':    [ ... ],         // a list of order trades/executions
                 'fee': {                      // fee info, if available
                     'currency': 'BTC',        // which currency the fee is (usually quote)
@@ -294,6 +307,9 @@ class SwapApi:
                 'filled':      1.1,           // filled amount of base currency
                 'remaining':   0.4,           // remaining amount to fill
                 'cost':        0.076094524,   // 'average' * 'price' (filling price used where available)
+                'positionSide':'long',        // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+                'realizedPnl': 0.076094524,   // realized profit
+
                 'trades':    [ ... ],         // a list of order trades/executions
                 'fee': {                      // fee info, if available
                     'currency': 'BTC',        // which currency the fee is (usually quote)
@@ -336,6 +352,8 @@ class SwapApi:
                 'price':        0.06917684,                 // Decimal price in quote currency
                 'amount':       1.5,                        // amount of base currency
                 'cost':         0.10376526,                 // total cost (including fees), `price * amount`
+                'positionSide': 'long',                     // side of the position, 'long' or 'short' for dual side mode, 'both' for single side mode
+                'realizedPnl':  0.076094524,                // realized profit
                 'fee':          {                           // provided by exchange or calculated by ccxt
                     'cost':  0.0015,                        // Decimal
                     'currency': 'ETH',                      // usually base currency for buys, quote currency for sells
@@ -576,7 +594,7 @@ class SwapApi:
                 "incomeType": "TRANSFER",   // income type
                 "income": "-0.37500000",    // income amount
                 "asset": "USDT",            // income asset
-                'timestamp': 1502962946216, // Unix timestamp in milliseconds
+                'time': 1502962946216, // Unix timestamp in milliseconds
                 "tranId":"9689322392",      // transaction id
                 "tradeId":""                // trade id, if existing
                 "info":  { ... }            // the original response

@@ -350,7 +350,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         for i in range(0, len(markets)):
             market = markets[i]
             id = market['symbol']
-            baseId = market['baseAsset'] + ".SWAP"
+            baseId = market['baseAsset']
             quoteId = market['quoteAsset']
             base = self.common_currency_code(baseId)
             quote = self.common_currency_code(quoteId)
@@ -538,7 +538,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         orderbook['nonce'] = self.safe_integer(response, 'lastUpdateId')
         return orderbook
 
-    async def create_order(self, symbol, type, side, amount, price, clientOrderId, positionSide, reduceOnly, params=None):
+    async def create_order(self, symbol, type, side, amount=None, price=None, clientOrderId=None, positionSide=None, reduceOnly=False, params=None):
         await self.load_markets()
         market = self.market(symbol)
 
@@ -551,8 +551,10 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'type': uppercaseType,
             'side': side.upper(),
         }
-        new_client_order_id = clientOrderId
-        request['newClientOrderId'] = new_client_order_id
+
+        newClientOrderId = self.client_order_id(clientOrderId)
+        request['newClientOrderId'] = newClientOrderId
+
         if uppercaseType == 'MARKET':
             quoteOrderQty = self.safe_decimal(params, 'quoteOrderQty')
             if quoteOrderQty is not None:
@@ -631,6 +633,9 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         }
 
     async def fetch_open_orders(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' fetch_open_orders requires a symbol argument')
+
         await self.load_markets()
         market = self.market(symbol)
 
@@ -1014,6 +1019,8 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'status': status,
             'fee': fee,
             'trades': trades,
+            'positionSide': self.safe_string(order, 'positionSide'),
+            'realizedPnl': self.safe_decimal(order, 'realizedPnl')
         }
 
     def parse_swap_trade(self, trade, market=None):
@@ -1082,6 +1089,8 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'amount': amount,
             'cost': price * amount,
             'fee': fee,
+            'positionSide': self.safe_string(trade, 'positionSide'),
+            'realizedPnl': self.safe_decimal(trade, 'realizedPnl')
         }
 
     def parse_swap_orders(self, orders, market=None, since=None, limit=None, params={}):
@@ -1147,7 +1156,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             "incomeType": income['incomeType'],
             "income": income['income'],
             "asset": income['asset'],
-            'timestamp': income['time'],
+            'time': income['time'],
             "tranId": income['tranId'],
             "tradeId": income['tradeId'],
             "info": income
@@ -1215,3 +1224,14 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
                 raise ExchangeError(feedback)
         if not success:
             raise ExchangeError(self.id + ' ' + body)
+
+    def client_order_id(self, origin_client_order_id, prefix='x-VULwwsN3'):
+        if not origin_client_order_id:
+            uuid = self.uuid().replace('-', '')
+            buffer = [_a ^ _b for _a, _b in zip(bytes.fromhex(uuid[:16]), bytes.fromhex(uuid[-16:]))]
+            origin_client_order_id = bytes(buffer).hex()
+            origin_client_order_id = origin_client_order_id.upper()
+
+        if not origin_client_order_id.startswith(prefix):
+            origin_client_order_id = prefix + origin_client_order_id
+        return origin_client_order_id
