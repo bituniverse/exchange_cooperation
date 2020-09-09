@@ -34,6 +34,7 @@ While CCXT supports future trading as well.
 But their implementation was based on spot trading, which losses a lot of features and information for futures.
 
 So if the future trading needs to be supported, the CCXT's implementation cannot be used directly. 
+You have to implement all the interfaces defined in swap_api.py.
 
 ## Requirements
 
