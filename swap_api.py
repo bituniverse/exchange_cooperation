@@ -121,7 +121,7 @@ class SwapApi:
         """
         raise NotImplementedError()
 
-    async def fetch_order(self, id, symbol, clientOrderId=None, params=None):
+    async def fetch_order(self, id=None, symbol=None, clientOrderId=None, params=None):
         """
         Fetch one single order with order id or client order id
 

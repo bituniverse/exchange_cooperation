@@ -656,7 +656,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         orders = await self.fetch_orders(symbol, since, limit, fromId, direct, params)
         return self.filter_by_array(orders, 'status', values={'closed', 'canceled', 'canceling'}, indexed=False)
 
-    async def fetch_order(self, id, symbol, clientOrderId=None, params=None):
+    async def fetch_order(self, id=None, symbol=None, clientOrderId=None, params=None):
         if symbol is None:
             raise ArgumentsRequired(self.id + ' fetchOrder requires a symbol argument')
 
