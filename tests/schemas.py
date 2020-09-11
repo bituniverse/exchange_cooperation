@@ -20,8 +20,15 @@ NUMBER = Or(Decimal, float, int, And(str, Use(Decimal)))
 NULLABLE_INT = Or(int, None)
 TIMESTAMP = And(Use(int), is_millisecond_timestamp)
 
-
 MIN_MAX_SCHEMA = Schema(
+    {
+        'min': NUMBER,
+        Optional('max'): NULLABLE_NUMBER,
+        Optional('stepSize'): NULLABLE_NUMBER,
+    }
+)
+
+NULLABLE_MIN_MAX_SCHEMA = Schema(
     {
         Optional('min'): NULLABLE_NUMBER,
         Optional('max'): NULLABLE_NUMBER,
@@ -43,29 +50,29 @@ MARKET_SCHEMA = Schema(
         Optional('percentage'): bool,
         Optional('tierBased'): bool,
         'precision': {
-            Optional('price'): NULLABLE_INT,
-            Optional('amount'): NULLABLE_INT,
-            Optional('cost'): NULLABLE_INT,
+            'price': NUMBER,
+            'amount': NUMBER,
+            Optional('cost'): NULLABLE_MIN_MAX_SCHEMA,
             Optional(str): object,
         },
         'limits': {
-            Optional('amount'): Optional(MIN_MAX_SCHEMA),
-            Optional('price'): Optional(MIN_MAX_SCHEMA),
-            Optional('cost'): Optional(MIN_MAX_SCHEMA),
+            'amount': MIN_MAX_SCHEMA,
+            Optional('price'): Optional(NULLABLE_MIN_MAX_SCHEMA),
+            Optional('cost'): Optional(NULLABLE_MIN_MAX_SCHEMA),
             Optional(str): object,
         },
-        'info': object,
+        Optional('info'): object,
         Optional(str): object,
     }
 )
 
 MARKETS_SCHEMA = Schema([MARKET_SCHEMA])
 
-ORDER_BOOK_ITEM_SCHEMA = Schema([Or(Decimal, float, int, And(str, Use(Decimal))), Or(Decimal, float, int, And(str, Use(Decimal)))])
+ORDER_BOOK_ITEM_SCHEMA = And([NUMBER], lambda x: len(x) == 2)
 ORDER_BOOK_SCHEMA = Schema(
     {
-        'bids': [ORDER_BOOK_ITEM_SCHEMA],
-        'asks': [ORDER_BOOK_ITEM_SCHEMA],
+        'bids': And([ORDER_BOOK_ITEM_SCHEMA], lambda x: len(x) > 0),
+        'asks': And([ORDER_BOOK_ITEM_SCHEMA], lambda x: len(x) > 0),
         Optional('timestamp'): Or(TIMESTAMP, None),
         Optional('datetime'): Or(str, None),
         Optional('nonce'): Or(int, None),

@@ -30,6 +30,13 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'countries': ['JP', 'MT'],  # Japan, Malta
             'rateLimit': 500,
             'certified': True,
+            'has': {
+                'clientOrderIdSupport': True,
+                'singlePositionSideSupport': True,
+                'dualPositionSideSupport': True,
+                'isolatedMarginTypeSupport': True,
+                'crossedMarginTypeSupport': True,
+            },
             'urls': {
                 'logo': 'https://user-images.githubusercontent.com/1294454/29604020-d5483cdc-87ee-11e7-94c7-d1a8d9169293.jpg',
                 'test': {
@@ -552,7 +559,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'side': side.upper(),
         }
 
-        newClientOrderId = self.client_order_id(clientOrderId)
+        newClientOrderId = clientOrderId
         request['newClientOrderId'] = newClientOrderId
 
         if uppercaseType == 'MARKET':
@@ -1000,10 +1007,11 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
         clientOrderId = self.safe_string(order, 'clientOrderId')
         lastTradeTimestamp = self.safe_string(order, 'updateTime')
         timestamp = timestamp or lastTradeTimestamp
+        position_side = self.safe_string(order, 'positionSide')
         return {
             'info': order,
             'id': id,
-            'client_order_id': clientOrderId,
+            'clientOrderId': clientOrderId,
             'timestamp': timestamp,
             'datetime': self.iso8601(timestamp),
             'lastTradeTimestamp': lastTradeTimestamp,
@@ -1019,7 +1027,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'status': status,
             'fee': fee,
             'trades': trades,
-            'positionSide': self.safe_string(order, 'positionSide'),
+            'positionSide': position_side and position_side.lower(),
             'realizedPnl': self.safe_decimal(order, 'realizedPnl')
         }
 
@@ -1075,6 +1083,8 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             market = self.safe_value(self.markets_by_id, marketId)
         if market is not None:
             symbol = market['symbol']
+
+        position_side = self.safe_string(trade, 'positionSide')
         return {
             'info': trade,
             'timestamp': timestamp,
@@ -1089,7 +1099,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'amount': amount,
             'cost': price * amount,
             'fee': fee,
-            'positionSide': self.safe_string(trade, 'positionSide'),
+            'positionSide': position_side and position_side.lower(),
             'realizedPnl': self.safe_decimal(trade, 'realizedPnl')
         }
 
@@ -1126,7 +1136,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             market = self.markets_by_id[marketId]
         if market is not None:
             symbol = market['symbol']
-
+        position_side = self.safe_string(position, 'positionSide')
         return {
             'info': position,
             'symbol': symbol,
@@ -1139,7 +1149,7 @@ class BinanceSwap(SwapApi, CCXTExtension, ccxt.async_support.binance):
             'marginType': self.safe_string(position, 'marginType'),
             'initMargin': self.truncate_to_string(
                 self.safe_decimal(position, 'isolatedMargin') - self.safe_decimal(position, 'unRealizedProfit'), 8),
-            'positionSide': self.safe_string(position, 'positionSide'),
+            'positionSide': position_side and position_side.lower(),
         }
 
     def parse_swap_income(self, income):
