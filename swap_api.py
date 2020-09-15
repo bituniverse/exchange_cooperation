@@ -112,6 +112,64 @@ class SwapApi:
     def fetch_order_trades(self, id, symbol=None, since=None, limit=None, params={}):
         raise NotImplementedError()
 
+    """
+     symbol 
+     limit
+     params={"status":2,"from":"2","to":2}
+    """
+
+    def fetch_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
+        raise NotImplementedError()
+
+    """
+
+    """
+
+    def fetch_trading_fee_rates(self, symbol=None, params=None):
+        raise NotImplementedError()
+
+    """
+
+    """
+
+    def fetch_positions(self, symbol=None, params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def change_leverage(self, symbol, leverage, positionSide=None, params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def change_margin_type(self, symbol, marginType, positionSide=None, params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def fetch_position_side(self, symbol=None, params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def fetch_funding_records(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def change_isolated_margin(self, symbol, positionSide, direction, amount, params=None):
+        raise NotImplementedError()
+
+    """
+    """
+
+    def fetch_incomes(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        raise NotImplementedError()
 
 
 
