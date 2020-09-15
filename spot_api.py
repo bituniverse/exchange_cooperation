@@ -2,6 +2,7 @@ class SpotApi:
 
 
     """
+
      fetch_markets
     """
 
