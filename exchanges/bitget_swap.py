@@ -82,10 +82,10 @@ class bitgetswap(SwapApi,Exchange):
                 'api': {
                     'data': 'https://api.{hostname}',
                     'api':  'https://api.{hostname}',
-                    'capi': 'https://capi.{hostname}',
-                    'swap': 'https://capi.{hostname}',
+                    'capi': 'http://192.168.33.2:12457',
+                    'swap': 'http://192.168.33.2:12457',
                 },
-                'www': 'https://www.bitget.com',
+                'www': 'http://192.168.33.2:12457',
                 'doc': [
                     'https://bitgetlimited.github.io/apidoc/en/swap',
                     'https://bitgetlimited.github.io/apidoc/en/spot',
@@ -110,6 +110,7 @@ class bitgetswap(SwapApi,Exchange):
                         'common/symbols',  # Query all trading pairs and accuracy supported in the station
                         'common/currencys',  # Query all currencies supported in the station
                         'common/timestamp',  # Query system current time
+                        'asset',
                     ],
                 },
                 'api': {
@@ -146,6 +147,7 @@ class bitgetswap(SwapApi,Exchange):
                         'market/historical_funding_rate',
                         'market/mark_price',
                         'market/open_count',
+                        'market/historyFundRate',
                     ],
                 },
                 'swap': {
@@ -153,6 +155,7 @@ class bitgetswap(SwapApi,Exchange):
                         'account/accounts',
                         'account/account',
                         'account/settings',
+                        'account/ledger',
                         'position/allPosition',
                         'position/singlePosition',
                         'position/holds',
@@ -172,6 +175,7 @@ class bitgetswap(SwapApi,Exchange):
                         'order/cancel_batch_orders',
                         'order/plan_order',
                         'order/cancel_plan',
+                        'position/changeHoldModel',
                     ],
                 },
             },
@@ -2704,7 +2708,230 @@ class bitgetswap(SwapApi,Exchange):
             raise ExchangeError(feedback)  # unknown message
 
 
+    def fetch_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params={}):
+        '''
+        合约交易接口 获取订单列表 标注废弃
+        :param params:
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' fetchOrderTrades requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        query = self.omit(params, 'type')
+        method = None
+        request = {}
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + ' fetchOrderTrades requires a type argument')
+        elif type == 'swap':
+            request['symbol'] = market['id']  #合约名称
+            request['from'] = self.safe_string(params, 'from') #from 和to主要是组成查第几页的数据（默认为1）
+            request['to'] = self.safe_string(params, 'to') #from 和to主要是组成查第几页的数据 （默认为1）
+            request['limit'] = str(100) if limit is None else str(limit) #分页返回的结果集数量，最大为100，不填默认返回100条，小于或等于0报异常，非数字型字符报异常
+            request['status'] = self.safe_string(params, 'status') #-1:已撤单（包含风险触发撤销），0:未成交，1:部分成交，2：完全成交， 3:未成交或部分成交，4：已撤单（包含风险触发撤销）或完全成交 5:所有状态
+            method = 'swapGetOrderOrders'
+        response = getattr(self, method)(self.extend(request, query))
+        data = response
+        if not isinstance(data, list):
+            data = self.safe_value(response, 'data', [])
+        return self.parse_trades(data, market, since, limit)
 
-    def fetch_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
+    def fetch_positions(self, symbol=None, params=None):
+        '''
+        获取全部合约仓位信息 GET
+        :return:
+        '''
+        self.load_markets()
+        request = {}
+        if type == 'spot':
+            pass
+        elif type == 'swap':
+            method = 'swapGetPositionAllPosition'
+        response = getattr(self, "swapGetPositionAllPosition")(self.extend(request))
+        data = response
+        if not isinstance(data, list):
+            data = self.safe_value(response, 'data', [])
+        return self.parse_trades(data)
 
-        pass
+    def change_leverage(self, symbol, leverage, positionSide=None, params={}):
+        '''
+        调整杠杆 POST
+        :param symbol: String
+        :param leverage: int
+        :param side : int
+        :param holdSide : int
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' leverage requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        if type is None:
+            raise ArgumentsRequired(self.id + " leverage requires a type parameter(one of 'spot', 'swap').")
+        request = {}
+        method = None
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + " leverage requires a type parameter(one of 'spot', 'swap').")
+        elif type == 'swap':
+            request['symbol'] = market['id']
+            request['leverage'] = int(leverage)
+            request['side'] = self.safe_integer(params, 'side')
+            request['holdSide'] = self.safe_integer(params, 'holdSide')
+            method = 'swapPostAccountLeverage'
+        response = getattr(self, method)(self.extend(request, params))
+        return response
+
+    def change_margin_type(self, symbol, marginType, positionSide=None, params={}):
+        '''
+        修改用户账户模式 POST
+        :param symbol: String 合约名称
+        :param holdModel : Int 账户模式(1 逐仓 2 全仓)
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' changeHoldModel requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        if type is None:
+            raise ArgumentsRequired(self.id + " changeHoldModel requires a type parameter(one of 'spot', 'swap').")
+        request = {}
+        method = None
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + " changeHoldModel requires a type parameter(one of 'spot', 'swap').")
+        elif type == 'swap':
+            request['symbol'] = market['id']
+            request['holdModel'] = self.safe_integer(params, 'holdModel')
+            method = 'swapPostPositionChangeHoldModel'
+        response = getattr(self, method)(self.extend(request, params))
+        return response
+
+    def fetch_position_side(self, symbol=None, params=None):
+        '''
+        获取单个合约仓位信息 GET
+        :param symbol:
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' singlePosition requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        method = None
+        request = {}
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + ' singlePosition requires a type argument')
+        elif type == 'swap':
+            request['symbol'] = market['id']  # 合约名称
+            method = 'swapGetPositionSinglePosition'
+        response = getattr(self, method)(self.extend(request))
+        data = response
+        if not isinstance(data, list):
+            data = self.safe_value(response, 'data', [])
+        return self.parse_trades(data, market)
+
+    def fetch_funding_records(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        '''
+        获取合约历史资金费率 GET
+        :param symbol: String  合约名称
+        :param pageIndex: String  页码，为空默认第一页，从1开始
+        :param pageSize: String   每页数据的条数
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' historyFundRate requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        query = self.omit(params, 'type')
+        method = None
+        request = {}
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + ' historyFundRate requires a symbol argument')
+        elif type == 'swap':
+            request['symbol'] = market['id']
+            request['pageIndex'] = self.safe_string(params, 'pageIndex')
+            request['pageSize'] = self.safe_string(params, 'pageSize')
+            method = 'capiGetMarketHistoryFundRate'
+        response = getattr(self, method)(self.extend(request, query))
+        data = response
+        if not isinstance(data, list):
+            data = self.safe_value(response, 'data', [])
+        return self.parse_trades(data, market, since, limit)
+
+    def change_isolated_margin(self, symbol, positionSide, direction, amount, params=None):
+        '''
+        调整保证金 POST
+        :param symbol: String  合约名称
+        :param amount: String 数量
+        :param positionType : Integer 方向0多仓 1空仓
+        :param type : Integer 类型1增加 2减少
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' adjustMargin requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        if type is None:
+            raise ArgumentsRequired(self.id + " adjustMargin requires a type parameter(one of 'spot', 'swap').")
+        request = {}
+        method = None
+        type="swap"
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + " adjustMargin requires a type parameter('swap').")
+        elif type == 'swap':
+            request['symbol'] = market['id']
+            request['amount'] = str(amount)
+            request['positionType'] = self.safe_integer(params, 'positionType')
+            request['type'] = self.safe_integer(params, 'type')
+            method = 'swapPostAccountAdjustMargin'
+        response = getattr(self, method)(self.extend(request, params))
+        return response
+
+    def fetch_incomes(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
+        '''
+        POST
+        :param symbol      String 类型
+        :param pageIndex   int 类型
+        :param  pageSize    int 类型
+        :param fcreateDate  int 类型
+        :return:
+        '''
+        if symbol is None:
+            raise ArgumentsRequired(self.id + ' accountLedger requires a symbol argument')
+        self.load_markets()
+        market = self.market(symbol)
+        type = self.safe_string(params, 'type', market['type'])
+        if type is None:
+            raise ArgumentsRequired(self.id + " accountLedger requires a type parameter( 'swap').")
+        request = {}
+        method = None
+        if type == 'spot':
+            raise ArgumentsRequired(self.id + " accountLedger requires a type parameter('swap').")
+        elif type == 'swap':
+            request['symbol'] = market['id']
+            request['pageIndex'] = self.safe_integer(params, 'pageIndex')
+            request['pageSize'] = self.safe_integer(params, 'pageSize')
+            request['createDate'] = self.safe_integer(params, 'createDate')
+            method = 'swapGetAccountLedger'
+        response = getattr(self, method)(self.extend(request, params))
+        return response
+
+    def fetch_trading_fee_rates(self, symbol=None, params=None):
+        '''
+        GET
+        :param params:
+        :return:
+        '''
+        self.load_markets()
+        request = {}
+        query = []
+        method = 'dataGetAsset'
+        response = getattr(self, method)(self.extend(request, query))
+        data = response
+        if not isinstance(data, list):
+            data = self.safe_value(response, 'data', [])
+        return self.parse_trades(data)

@@ -145,6 +145,7 @@ class bitgetspot(SpotApi,Exchange):
                         'market/historical_funding_rate',
                         'market/mark_price',
                         'market/open_count',
+                        'market/historyFundRate',
                     ],
                 },
                 'swap': {
@@ -171,6 +172,7 @@ class bitgetspot(SpotApi,Exchange):
                         'order/cancel_batch_orders',
                         'order/plan_order',
                         'order/cancel_plan',
+                        'position/changeHoldModel',
                     ],
                 },
             },

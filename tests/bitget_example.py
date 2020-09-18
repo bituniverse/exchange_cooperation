@@ -2,13 +2,39 @@
 
 from exchanges.bitget_swap import bitgetswap
 
-bitgetswap.apiKey ="bg_bbe24d57657d45de54210905888024e2"
-bitgetswap.secret ="61629c51d4b5f127ace628fba9feb41a3272fee468d28deea35a23e121b37188"
+#bitgetswap.apiKey ="bg_bbe24d57657d45de54210905888024e2"
+#bitgetswap.secret ="61629c51d4b5f127ace628fba9feb41a3272fee468d28deea35a23e121b37188"
+#bitgetswap.password ="11111111"
+
+bitgetswap.apiKey ="bg_b6bf2c1e88e352f6d03a0d02544f1354"
+bitgetswap.secret ="8ecba60d41f18be31a35371800a22628b5d9a8ec5f4b9a084d862f85770306f1"
 bitgetswap.password ="11111111"
 b=bitgetswap()
 
 
-print(bitgetswap.fetch_time(b, {}))
+
+#print(bitgetswap.fetch_orders(b,"CMT_BTCUSDT",None,None,None,"",{"from":"1","to":"1","limit":"100","status":"5"}))
+
+#print(bitgetswap.fetch_positions(b))
+
+#print(bitgetswap.change_leverage(b,"CMT_BTCUSDT",10,None,{"holdSide":2}))
+
+#print(bitgetswap.change_margin_type(b,"CMT_BTCUSDT",None,None,{"holdModel":1}))
+
+#print(bitgetswap.fetch_position_side(b,"CMT_BTCUSDT"))
+
+#print(bitgetswap.fetch_funding_records(b,"CMT_BTCUSDT",None,None,None,None,{"pageIndex":1,"pageSize":50}))
+
+#print(bitgetswap.change_isolated_margin(b,"CMT_BTCUSDT",None,None,10,{"positionType":1,"type":1}))
+
+#print(bitgetswap.fetch_incomes(b,"CMT_BTCUSDT",None,None,None,None,{"pageIndex":1,"pageSize":50,"createDate":70}))
+
+
+print(bitgetswap.fetch_trading_fee_rates(b))
+
+
+
+#print(bitgetswap.fetch_time(b, {}))
 
 #print(bitgetswap.fetch_markets(b,{}))
 
