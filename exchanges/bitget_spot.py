@@ -109,6 +109,7 @@ class bitgetspot(SpotApi,Exchange):
                         'common/symbols',  # Query all trading pairs and accuracy supported in the station
                         'common/currencys',  # Query all currencies supported in the station
                         'common/timestamp',  # Query system current time
+                        'asset',
                     ],
                 },
                 'api': {

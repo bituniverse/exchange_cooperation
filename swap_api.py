@@ -113,59 +113,93 @@ class SwapApi:
         raise NotImplementedError()
 
     """
-     symbol 
-     limit
-     params={"status":2,"from":"2","to":2}
+     symbol   CMT_BTCUSDT
+     since    None
+     limit    None
+     fromId   None
+     direct   None
+     params={"from":"1","to":"1","limit":"100","status":"5"}
     """
 
     def fetch_orders(self, symbol, since=None, limit=None, fromId=None, direct='next', params=None):
         raise NotImplementedError()
 
     """
-
+     symbol  None
+     params  None
     """
 
     def fetch_trading_fee_rates(self, symbol=None, params=None):
         raise NotImplementedError()
 
     """
-
+     symbol   None
+     params   None
     """
 
     def fetch_positions(self, symbol=None, params=None):
         raise NotImplementedError()
 
     """
+      symbol  CMT_BTCUSDT
+      leverage 10
+      positionSide None
+      params={"holdSide":2}
     """
 
     def change_leverage(self, symbol, leverage, positionSide=None, params=None):
         raise NotImplementedError()
 
     """
+     symbol  CMT_BTCUSDT
+     marginType None
+     positionSide None
+     params={"holdModel":1}
     """
 
     def change_margin_type(self, symbol, marginType, positionSide=None, params=None):
         raise NotImplementedError()
 
     """
+    symbol  CMT_BTCUSDT
+    params  None
+    
     """
 
     def fetch_position_side(self, symbol=None, params=None):
         raise NotImplementedError()
 
     """
+    symbol    CMT_BTCUSDT
+    since     None
+    limit     None
+    fromId    None
+    direct    None
+    params={"pageIndex":1,"pageSize":50}
+    
     """
 
     def fetch_funding_records(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
         raise NotImplementedError()
 
     """
+    symbol    CMT_BTCUSDT
+    positionSide None
+    direction    None
+    amount       10 
+    params={"positionType":1,"type":1}
     """
 
     def change_isolated_margin(self, symbol, positionSide, direction, amount, params=None):
         raise NotImplementedError()
 
     """
+    symbol  CMT_BTCUSDT
+    since   None
+    limit   None
+    fromId  None
+    direct  None
+    params={"pageIndex":1,"pageSize":50,"createDate":70}
     """
 
     def fetch_incomes(self, symbol=None, since=None, limit=None, fromId=None, direct='next', params=None):
