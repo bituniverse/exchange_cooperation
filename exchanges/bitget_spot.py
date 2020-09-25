@@ -162,6 +162,7 @@ class bitgetspot(SpotApi,Exchange):
                         'order/fills',
                         'order/currentPlan',
                         'order/historyPlan',
+                        'account/userFee',
                     ],
                     'post': [
                         'account/leverage',
