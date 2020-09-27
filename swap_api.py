@@ -66,7 +66,8 @@ class SwapApi:
        create_order
     """
 
-    async def create_order(self, symbol, type, side, amount, price=None, params={}):
+    async def create_order(self, symbol, type, side, amount, price=None, clientOrderId=None, positionSide=None,
+                           reduceOnly=False,params={}):
         raise NotImplementedError()
 
     """

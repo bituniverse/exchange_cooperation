@@ -82,10 +82,10 @@ class bitgetswap(SwapApi,bitget):
                 'api': {
                     'data': 'https://api.{hostname}',
                     'api':  'https://api.{hostname}',
-                    'capi': 'https://capi.{hostname}',
-                    'swap': 'https://capi.{hostname}',
+                    'capi': 'http://192.168.33.2:12457',
+                    'swap': 'http://192.168.33.2:12457',
                 },
-                'www': 'https://www.bitget.com',
+                'www': 'http://192.168.33.2:12457',
                 'doc': [
                     'https://bitgetlimited.github.io/apidoc/en/swap',
                     'https://bitgetlimited.github.io/apidoc/en/spot',
@@ -766,7 +766,9 @@ class bitgetswap(SwapApi,bitget):
     def parse_markets(self, markets):
         result = []
         for i in range(0, len(markets)):
-            result.append(self.parse_market(markets[i]))
+              co=self.safe_string(markets[i], 'quote_currency')
+              if co=='USDT':
+               result.append(self.parse_market(markets[i]))
         return result
 
     def parse_market(self, market):
@@ -801,10 +803,11 @@ class bitgetswap(SwapApi,bitget):
         #     }
         #
         id = self.safe_string(market, 'symbol')
+        stepSize=self.safe_float(market,"priceEndStep")
         marketType = 'spot'
         spot = True
         swap = False
-        baseId = self.safe_string_2(market, 'base_currency', 'coin')
+        baseId = self.safe_string(market, 'underlying_index')
         quoteId = self.safe_string(market, 'quote_currency')
         contractVal = self.safe_float(market, 'contract_val')
         if contractVal is not None:
@@ -813,15 +816,15 @@ class bitgetswap(SwapApi,bitget):
             swap = True
         base = self.safe_currency_code(baseId)
         quote = self.safe_currency_code(quoteId)
-        symbol = id.upper()
-        if spot:
-            symbol = base + '/' + quote
+        # symbol=id.upper()
+        # if spot:
+        symbol = base + '/' + quote
         lotSize = self.safe_float_2(market, 'lot_size', 'trade_increment')
         tick_size = self.safe_float(market, 'tick_size')
-        newtick_size = float('1e-' + self.number_to_string(tick_size))
+        size_amount=self.safe_integer(market,'size_increment')
         precision = {
-            'amount': self.safe_integer(market, 'size_increment', lotSize),
-            'price': int(newtick_size),
+            'amount': int(size_amount),
+            'price': int(tick_size),
         }
         minAmount = self.safe_float_2(market, 'min_size', 'base_min_size')
         status = self.safe_string(market, 'status')
@@ -844,8 +847,9 @@ class bitgetswap(SwapApi,bitget):
             'precision': precision,
             'limits': {
                 'amount': {
-                    'min': 0,
+                    'min': precision['amount'],
                     'max': None,
+                    'stepSize':stepSize
                 },
                 'price': {
                     'min': precision['price'],
@@ -1845,9 +1849,16 @@ class bitgetswap(SwapApi,bitget):
         type = self.safe_string(order, 'type')
         side = self.parse_order_side(type)
         type = self.parse_order_type(type)
+        if type=='open' and side=='long':
+                  side='buy'
+        if type=='open' and side=='short':
+                  side='sell'
+        if type=="close" and side=='long':
+                  side='sell'
+        if type=='close' and side=='short':
+                  side='buy'
         # if (side != 'buy') and (side != 'sell'):
         #     side = self.parse_order_side(type)
-        # }
         # if (type != 'limit') and (type != 'market'):
         #     if 'pnl' in order:
         #         type = 'futures'
@@ -1909,14 +1920,15 @@ class bitgetswap(SwapApi,bitget):
             'trades': None,
         }
 
-    async def create_order(self, symbol, type, side, amount, price=None, params={}):
+    async def create_order(self, symbol, type, side, amount, price=None,clientOrderId=None, positionSide=None,
+                           reduceOnly=False, params={}):
         await self.load_markets()
         market = self.market(symbol)
         request = {
             'symbol': market['id'],
         }
-        clientOrderId = self.safe_string_2(params, 'client_oid', 'clientOrderId', self.uuid())
-        params = self.omit(params, ['client_oid', 'clientOrderId'])
+        if clientOrderId is None:
+            clientOrderId=str(self.uuid())
         method = None
         if market['spot']:
             accountId = self.get_account_id({
@@ -1949,11 +1961,15 @@ class bitgetswap(SwapApi,bitget):
         elif market['swap']:
             request['order_type'] = '0'  # '0' = Normal order, None and 0 imply a normal limit order, '1' = Post only, '2' = Fill or Kill, '3' = Immediate Or Cancel
             request['client_oid'] = clientOrderId
-            orderType = self.safe_string(params, 'type')
-            if orderType is None:
-                raise ArgumentsRequired(self.id + " createOrder requires a type parameter, '1' = open long, '2' = open short, '3' = close long, '4' = close short for " + market['type'] + ' orders')
             request['size'] = self.amount_to_precision(symbol, amount)
-            request['type'] = orderType
+            if side=='buy' and positionSide=='short':
+                 request['type'] =1
+            if side=='buy' and positionSide=='long':
+                 request['type'] =4
+            if side=='sell' and positionSide=='short':
+                request['type'] = 2
+            if side=='sell' and positionSide=='long':
+                request['type'] = 3
             # if match_price is set to '1', the price parameter will be ignored for market orders
             if type == 'limit':
                 request['match_price'] = '0'
@@ -2003,11 +2019,11 @@ class bitgetswap(SwapApi,bitget):
         request = {}
         if type == 'spot':
             method = 'apiPostOrderOrdersOrderIdSubmitcancel'
-            request['order_id'] = clientOrderId
+            request['order_id'] = id
             request['method'] = 'submitcancel'
         elif type == 'swap':
             method = 'swapPostOrderCancelOrder'
-            request['orderId'] = clientOrderId
+            request['orderId'] = id
             request['symbol'] = market['id']
         response = await self.swapPostOrderCancelOrder(request)
         #
@@ -2099,18 +2115,19 @@ class bitgetswap(SwapApi,bitget):
         method = None
         request = {}
         if type == 'spot':
-            clientOid = self.safe_string(params, 'client_oid')
-            if clientOid is not None:
+            if clientOrderId is not None:
                 method = 'apiPostOrderOrdersClientOid'
-                request['client_oid'] = clientOid
+                request['client_oid'] = clientOrderId
             else:
                 method = 'apiPostOrderOrdersOrderId'
-                request['order_id'] = clientOrderId
+                request['order_id'] = id
             request['method'] = 'getOrder'
         elif type == 'swap':
             method = 'swapGetOrderDetail'
             request['symbol'] = market['id']
-            request['orderId'] = clientOrderId
+            request['orderId'] = id
+            if clientOrderId is not None:
+                request['orderId'] = clientOrderId
         query = self.omit(params, 'type')
         data = await self.swapGetOrderDetail(request)
         #
@@ -2731,21 +2748,22 @@ class bitgetswap(SwapApi,bitget):
         if data is None:
             raise NotImplementedError()
         positon_list = []
-        marginType = "isolated" if data[0]["margin_mode"] == "fixed" else "crossed"
-        for position in data[0]["holding"]:
-            p_dict = {}
-            p_dict["symbol"] = position["symbol"]
-            p_dict["position"] = self.safe_integer(position, "position")
-            p_dict["openPrice"] = self.safe_float(position, "avg_cost")
-            p_dict["markPrice"] = None
-            p_dict["unrealizedProfit"] = self.safe_float(position, "realized_pnl")
-            p_dict["liquidatePrice"] = self.safe_float(position, "liquidation_price")
-            p_dict["leverage"] = self.safe_integer(position, "leverage")
-            p_dict["marginType"] = marginType
-            p_dict["initMargin"] = self.safe_float(position, "margin")
-            p_dict["positionSide"] = 'long' if position["side"] == "1" else "short"
-            p_dict["info"] = position
-            positon_list.append(p_dict)
+        for po in data:
+            marginType = "isolated" if po["margin_mode"] == "fixed" else "crossed"
+            for position in po["holding"]:
+                p_dict = {}
+                p_dict["symbol"] = position["symbol"]
+                p_dict["position"] = self.safe_integer(position, "position")
+                p_dict["openPrice"] = self.safe_float(position, "avg_cost")
+                p_dict["markPrice"] = None
+                p_dict["unrealizedProfit"] =None
+                p_dict["liquidatePrice"] = self.safe_float(position, "liquidation_price")
+                p_dict["leverage"] = self.safe_integer(position, "leverage")
+                p_dict["marginType"] = marginType
+                p_dict["initMargin"] = self.safe_float(position, "margin")
+                p_dict["positionSide"] = 'long' if position["side"] == "1" else "short"
+                p_dict["info"] = position
+                positon_list.append(p_dict)
         return positon_list
 
     async def change_leverage(self, symbol, leverage, positionSide=None, params={}):
