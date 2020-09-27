@@ -847,13 +847,14 @@ class bitgetswap(SwapApi,bitget):
             'precision': precision,
             'limits': {
                 'amount': {
-                    'min': precision['amount'],
+                    'min': 1,
                     'max': None,
-                    'stepSize':stepSize
+                    'stepSize': 1
                 },
                 'price': {
-                    'min': precision['price'],
-                    'max': None,
+                    'min': contractVal,
+                    'max':None,
+                    'stepSize': stepSize
                 },
                 'cost': {
                     'min': precision['price'],

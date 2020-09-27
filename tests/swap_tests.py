@@ -54,7 +54,7 @@ class TestSwapAPIs(IsolatedAsyncioTestCase):
         swap_schemas.ORDER_SCHEMA.validate(result)
 
     async def test_cancel_order(self):
-        result = await self.api.cancel_order('692920682039738313', 'BTC/USDT',)
+        result = await self.api.cancel_order('692920682039738313', 'BTC/USDT')
         print(result)
         swap_schemas.INFO_ONLY.validate(result)
 
