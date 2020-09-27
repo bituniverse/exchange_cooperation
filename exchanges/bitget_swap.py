@@ -82,10 +82,10 @@ class bitgetswap(SwapApi,bitget):
                 'api': {
                     'data': 'https://api.{hostname}',
                     'api':  'https://api.{hostname}',
-                    'capi': 'http://192.168.33.2:12457',
-                    'swap': 'http://192.168.33.2:12457',
+                    'capi': 'https://capi.{hostname}',
+                    'swap': 'https://capi.{hostname}',
                 },
-                'www': 'http://192.168.33.2:12457',
+                'www': 'https://www.bitget.com',
                 'doc': [
                     'https://bitgetlimited.github.io/apidoc/en/swap',
                     'https://bitgetlimited.github.io/apidoc/en/spot',
