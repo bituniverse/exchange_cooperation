@@ -823,8 +823,7 @@ class bitgetswap(SwapApi,bitget):
         tick_size = self.safe_float(market, 'tick_size')
         size_amount=self.safe_integer(market,'size_increment')
         precision = {
-            #'amount': int(size_amount),
-            'amount': int(5),
+            'amount': int(size_amount),
             'price': int(tick_size),
         }
         minAmount = self.safe_float_2(market, 'min_size', 'base_min_size')
@@ -871,7 +870,6 @@ class bitgetswap(SwapApi,bitget):
             re=1/(10**amount)
             newtick_size=('le-'+self.number_to_string(re))
             return  (newtick_size[3:])
-
 
 
     def amount_to_precision(self, symbol, amount):
