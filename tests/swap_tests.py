@@ -13,9 +13,9 @@ class TestSwapAPIs(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.api = bitgetswap({
             # note: DO NOT commit this
-            'apiKey': 'bg_b6bf2c1e88e352f6d03a0d02544f1354',
-            'secret': '8ecba60d41f18be31a35371800a22628b5d9a8ec5f4b9a084d862f85770306f1',
-            'password': '11111111'
+            'apiKey': 'you-apikey',
+            'secret': 'you-secret',
+            'password': 'you-passphrase'
             # 'verbose': True,
         })
         self.current_time_string = f'{int(time.time())}'
@@ -37,7 +37,7 @@ class TestSwapAPIs(IsolatedAsyncioTestCase):
         swap_schemas.ORDER_BOOK_SCHEMA.validate(result)
 
     async def test_create_order(self):
-        result = await self.api.create_order('BTC/USDT', 'market', 'buy', '100.23',None,None,"long")
+        result = await self.api.create_order('BTC/USDT', 'market', 'buy', 1,100.5,"500090626013","long")
         print(result)
         swap_schemas.ORDER_SCHEMA.validate(result)
 

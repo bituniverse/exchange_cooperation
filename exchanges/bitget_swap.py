@@ -823,7 +823,8 @@ class bitgetswap(SwapApi,bitget):
         tick_size = self.safe_float(market, 'tick_size')
         size_amount=self.safe_integer(market,'size_increment')
         precision = {
-            'amount': int(size_amount),
+            #'amount': int(size_amount),
+            'amount': int(5),
             'price': int(tick_size),
         }
         minAmount = self.safe_float_2(market, 'min_size', 'base_min_size')
@@ -847,14 +848,14 @@ class bitgetswap(SwapApi,bitget):
             'precision': precision,
             'limits': {
                 'amount': {
-                    'min': 1,
+                    'min': self.parse_amount(precision['amount']),
                     'max': None,
-                    'stepSize': 1
+                    'stepSize': self.parse_amount(precision['amount'])
                 },
                 'price': {
-                    'min': contractVal,
+                    'min': self.parse_amount(precision['price']),
                     'max':None,
-                    'stepSize': stepSize
+                    'stepSize': self.parse_amount(precision['price'])
                 },
                 'cost': {
                     'min': precision['price'],
@@ -862,6 +863,16 @@ class bitgetswap(SwapApi,bitget):
                 },
             },
         })
+
+    def  parse_amount(self,amount):
+        if amount==0:
+            return 1
+        else:
+            re=1/(10**amount)
+            newtick_size=('le-'+self.number_to_string(re))
+            return  (newtick_size[3:])
+
+
 
     def amount_to_precision(self, symbol, amount):
         return self.decimal_to_precision(amount, TRUNCATE, self.markets[symbol]['precision']['amount'], DECIMAL_PLACES)
@@ -1963,6 +1974,8 @@ class bitgetswap(SwapApi,bitget):
             request['order_type'] = '0'  # '0' = Normal order, None and 0 imply a normal limit order, '1' = Post only, '2' = Fill or Kill, '3' = Immediate Or Cancel
             request['client_oid'] = clientOrderId
             request['size'] = self.amount_to_precision(symbol, amount)
+            mid=market['info']
+            request['size']=float(amount/float(mid['contract_val']))
             if side=='buy' and positionSide=='short':
                  request['type'] =1
             if side=='buy' and positionSide=='long':
